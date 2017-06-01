@@ -1,5 +1,5 @@
 # AdapterBasic
-ListView RecyclerView 간단기는응용
+ListView  간단기는응용
 ```java
 package com.guozhe.android.adapterbasic;
 
