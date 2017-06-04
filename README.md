@@ -3,91 +3,104 @@ ListView  간단기는응용
 ```java
 package com.guozhe.android.adapterbasic;
 
-import android.content.Intent;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.GridView;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 
-public class ListActivity extends AppCompatActivity {
-    ListView listView;
-    ArrayList<String> datas = new ArrayList<>();
-
-    // 다른 액티비티와 데이터를 주고받을때 사용하는 키를 먼저 정의해둔다
-    public static final String DATA_KEY = "ListActivityData";
+public class GridActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_list);
+        setContentView(R.layout.activity_grid);
 
-        listView = (ListView) findViewById(R.id.listView);
-        // 1. 데이터
-        for(int i=0; i<100 ; i++){
-            datas.add("데이터"+i);
-        }
-        // 2. 아답터
-        ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1,datas);
-
-        // 3. 뷰 > 연결 < 아답터
-        listView.setAdapter(adapter);
-
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // Activity 에 값 전달하기
-                // 1. 전달받을 목적지 Intent 생성
-                Intent intent = new Intent(ListActivity.this, DetailActivity.class);
-                // 2. putExtra 로 값 입력
-                intent.putExtra(DATA_KEY, datas.get(position));
-                // 3. intent 를 이용한 Activity 생성 요청
-                startActivity(intent);
-            }
-        });
+        // 1 데이터
+        ArrayList<Data> datas = Loader.getData();
+        // 2 아답터
+        GridAdapter adapter = new GridAdapter(datas, this);
+        // 3 연결
+        GridView gridView = (GridView) findViewById(R.id.gridView);
+        gridView.setAdapter(adapter);
     }
 }
-package com.guozhe.android.adapterbasic;
 
-import android.content.Intent;
-import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.view.View;
-import android.widget.TextView;
+class GridAdapter extends BaseAdapter {
+    ArrayList<Data> datas;
+    Context context;
+    LayoutInflater inflater;
 
-public class DetailActivity extends AppCompatActivity {
+    public GridAdapter(ArrayList<Data> datas, Context context) {
+        this.datas = datas;
+        this.context = context;
+        inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    }
 
-    TextView textView;
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_detail);
+    public int getCount() { // 사용하는 데이터의 총 개수를 리턴...
+        return datas.size();
+    }
 
-        textView = (TextView) findViewById(R.id.textView);
+    @Override
+    public Object getItem(int position) { // 데이터 클래스 하나를 리턴
+        Log.e("Adapter","getItem position="+position);
+        return datas.get(position);
+    }
 
-        // Activity 에서 넘어온 값 처리하기
-        // 1. intent 를 꺼낸다
-        Intent intent = getIntent();
-        // 2. 값의 묶음인 bundle 을 꺼낸다
-        Bundle bundle = intent.getExtras(); // 데이터의 모음
-        String result = "";
-        // 3. bundle 이 있는지 유효성 검사를 한다.
-        if(bundle != null) {
-            // 3.1 bundle 이 있으면 값을 꺼내서 변수에 담는다
-            result = bundle.getString(ListActivity.DATA_KEY);
+    @Override
+    public long getItemId(int position) { // 대부분 인덱스가 그대로 리턴된다
+        Log.e("Adapter","getItem[Id] position="+position);
+        return position;
+    }
+
+    // 아이템 뷰 하나를 리턴한다.
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+        // xml 을 class 로 변환한다.
+        Log.d("ConvertView",position+" : convertView="+convertView);
+
+        Holder holder;
+        if (convertView == null) {
+            holder = new Holder();
+            convertView = inflater.inflate(R.layout.item_custom_grid, null);
+
+            holder.image = (ImageView) convertView.findViewById(R.id.imageView);
+            holder.title = (TextView) convertView.findViewById(R.id.textView);
+            convertView.setTag(holder);
+        }else{
+            holder = (Holder) convertView.getTag();
         }
 
-        textView.setText(result);
+        // 매줄에 해당되는 데이터를 꺼낸다
+        Data data = datas.get(position);
 
-        findViewById(R.id.btnBack).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
+        // 이미지 세팅하기
+        // 1. 이미지 suffix 만들기
+        int suffix = (data.getId() % 5) + 1;
+        // 2. 문자열로 리소스 아이디 가져오기
+        int id = context.getResources()
+                .getIdentifier("images" + suffix, "mipmap", context.getPackageName());
+        // 3. 리소스 아이디를 이미지뷰에 세팅하기
+        holder.image.setImageResource(id);
+
+        holder.title.setText(data.getTitle());
+
+        return convertView;
+    }
+
+    // Holder는 item layout 에 있는 위젯을 정의해둔다
+    class Holder {
+        public ImageView image;
+        public TextView title;
     }
 }
 ```
